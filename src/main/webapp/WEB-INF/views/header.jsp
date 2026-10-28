@@ -13,6 +13,12 @@
 
     <!-- Link Stylesheet -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/style.css?v=2">
+
+    <!-- Màu chữ ô tìm kiếm -->
+    <style>
+        .search-box input[name="keyword"] { color: #000 !important; }
+        .search-box input[name="keyword"]::placeholder { color: #6b7280; }
+    </style>
 </head>
 <body>
 <header>
@@ -30,6 +36,19 @@
                 <a href="${pageContext.request.contextPath}/admin/dashboard" style="color: #ef4444; font-weight: 700;">Quản Trị</a>
             </c:if>
         </nav>
+
+        <!-- ===== THANH TÌM KIẾM SẢN PHẨM ===== -->
+        <form class="search-box" action="${pageContext.request.contextPath}/products" method="get" accept-charset="UTF-8"
+              style="display: flex; align-items: center; border: 1px solid #d1d5db; border-radius: 999px; overflow: hidden; background: #fff;">
+            <input type="text" name="keyword" value="<c:out value='${param.keyword}'/>"
+                   placeholder="Tìm sản phẩm..."
+                   style="border: none; outline: none; padding: 8px 14px; width: 180px; background: transparent; color: #000;">
+            <button type="submit" title="Tìm kiếm"
+                    style="border: none; background: transparent; padding: 8px 14px; cursor: pointer; color: #000;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </form>
+        <!-- ===== HẾT THANH TÌM KIẾM ===== -->
 
         <div class="nav-actions">
             <!-- Giỏ hàng -->

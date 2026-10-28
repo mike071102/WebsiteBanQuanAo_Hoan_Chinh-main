@@ -1,12 +1,10 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ include file="/WEB-INF/views/header.jsp" %>
 
 <div class="container" style="margin-top: 30px; margin-bottom: 80px;">
     <div style="display: flex; gap: 30px;">
-
-        <!-- Sidebar Lọc Danh Mục -->
         <aside style="width: 250px; flex-shrink: 0;">
             <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 15px;">Danh Mục</h3>
             <ul style="list-style: none; padding: 0;">
@@ -26,10 +24,49 @@
                 </c:forEach>
             </ul>
         </aside>
-
-        <!-- Danh sách sản phẩm -->
         <main style="flex: 1;">
-            <h2 class="section-title" style="margin-bottom: 20px;">Sản Phẩm</h2>
+            <h2 class="section-title" style="margin-bottom: 20px;">
+                <c:choose>
+                    <c:when test="${not empty keyword}">Kết quả cho "<c:out value="${keyword}"/>"</c:when>
+                    <c:otherwise>Sản Phẩm</c:otherwise>
+                </c:choose>
+            </h2>
+            <form action="${pageContext.request.contextPath}/products" method="get" accept-charset="UTF-8"
+                  style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px;">
+                <input type="text" name="keyword" value="<c:out value='${keyword}'/>"
+                       placeholder="Tìm theo tên, thương hiệu, danh mục..."
+                       style="flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; color: #000; background: #fff;">
+
+                <c:if test="${not empty selectedCategoryId}">
+                    <input type="hidden" name="categoryId" value="${selectedCategoryId}">
+                </c:if>
+
+                <input type="number" name="minPrice" min="0" step="1000" value="${minPrice}" placeholder="Giá từ"
+                       style="width: 120px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; color: #000; background: #fff;">
+                <input type="number" name="maxPrice" min="0" step="1000" value="${maxPrice}" placeholder="Giá đến"
+                       style="width: 120px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; color: #000; background: #fff;">
+
+                <select name="sort" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; color: #000; background: #fff;">
+                    <option value="" ${empty sort ? 'selected' : ''}>Mới nhất</option>
+                    <option value="bestseller" ${sort == 'bestseller' ? 'selected' : ''}>Bán chạy</option>
+                    <option value="price_asc" ${sort == 'price_asc' ? 'selected' : ''}>Giá tăng dần</option>
+                    <option value="price_desc" ${sort == 'price_desc' ? 'selected' : ''}>Giá giảm dần</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary" style="padding: 10px 18px;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm
+                </button>
+
+                <c:if test="${searching or not empty sort}">
+                    <a href="${pageContext.request.contextPath}/products" class="btn btn-secondary" style="padding: 10px 14px;">Xóa lọc</a>
+                </c:if>
+            </form>
+
+            <!-- Số kết quả tìm được -->
+            <c:if test="${searching}">
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">Tìm thấy <strong>${resultCount}</strong> sản phẩm.</p>
+            </c:if>
+            <!-- ===== HẾT FORM TÌM KIẾM ===== -->
 
             <c:choose>
                 <c:when test="${not empty products}">
@@ -68,7 +105,12 @@
                     </div>
                 </c:when>
                 <c:otherwise>
-                    <p style="text-align: center; color: var(--text-secondary); margin-top: 50px;">Không tìm thấy sản phẩm nào trong danh mục này.</p>
+                    <p style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
+                        <c:choose>
+                            <c:when test="${searching}">Không tìm thấy sản phẩm phù hợp. Hãy thử từ khóa hoặc khoảng giá khác.</c:when>
+                            <c:otherwise>Không tìm thấy sản phẩm nào trong danh mục này.</c:otherwise>
+                        </c:choose>
+                    </p>
                 </c:otherwise>
             </c:choose>
         </main>

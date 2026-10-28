@@ -15,6 +15,7 @@ import poly.java.Entity.Product;
 import poly.java.Entity.ProductVariant;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,26 +43,56 @@ public class ProductServlet extends HttpServlet {
     private void showProductList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String categoryIdStr = request.getParameter("categoryId");
-        List<Product> products;
+        request.setCharacterEncoding("UTF-8");
 
-        if (categoryIdStr != null && !categoryIdStr.isBlank()) {
-            try {
-                int categoryId = Integer.parseInt(categoryIdStr);
-                products = productDAO.findByCategoryId(categoryId);
-                request.setAttribute("selectedCategoryId", categoryId);
-            } catch (NumberFormatException e) {
-                products = productDAO.findActiveProducts();
-            }
-        } else {
-            products = productDAO.findActiveProducts();
+        String keyword = trimToNull(request.getParameter("keyword"));
+        String sort = trimToNull(request.getParameter("sort"));
+        Integer categoryId = parseInt(request.getParameter("categoryId"));
+        BigDecimal minPrice = parseMoney(request.getParameter("minPrice"));
+        BigDecimal maxPrice = parseMoney(request.getParameter("maxPrice"));
+
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            BigDecimal tmp = minPrice;
+            minPrice = maxPrice;
+            maxPrice = tmp;
         }
+
+        List<Product> products = productDAO.searchActiveProducts(keyword, categoryId, minPrice, maxPrice, sort);
+
+        boolean searching = keyword != null || minPrice != null || maxPrice != null;
 
         request.setAttribute("categories", categoryDAO.findActiveCategories());
         request.setAttribute("products", products);
+        request.setAttribute("selectedCategoryId", categoryId);
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("minPrice", minPrice);
+        request.setAttribute("maxPrice", maxPrice);
+        request.setAttribute("sort", sort);
+        request.setAttribute("searching", searching);
+        request.setAttribute("resultCount", products.size());
         request.getRequestDispatcher("/WEB-INF/views/products.jsp").forward(request, response);
     }
-
+    private static String trimToNull(String v) {
+        if (v == null) return null;
+        v = v.trim();
+        return v.isEmpty() ? null : v;
+    }
+    private static Integer parseInt(String v) {
+        try {
+            return (v == null || v.isBlank()) ? null : Integer.valueOf(v.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+    private static BigDecimal parseMoney(String v) {
+        try {
+            if (v == null || v.isBlank()) return null;
+            BigDecimal n = new BigDecimal(v.trim().replace(",", "").replace(".", ""));
+            return n.signum() < 0 ? null : n;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
     private void showProductDetail(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 

@@ -6,6 +6,7 @@ import poly.java.DAO.ProductDAO;
 import poly.java.Entity.Product;
 import poly.java.Utils.JpaUtil;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductDAOImpl implements ProductDAO {
@@ -47,14 +48,12 @@ public class ProductDAOImpl implements ProductDAO {
         EntityManager em = JpaUtil.getEntityManager();
         try {
             em.getTransaction().begin();
-            
-            // 1. Xóa các bảng liên kết trực tiếp với Product
+
             em.createQuery("DELETE FROM Wishlist w WHERE w.productID.id = :id").setParameter("id", id).executeUpdate();
             em.createQuery("DELETE FROM Review r WHERE r.productID.id = :id").setParameter("id", id).executeUpdate();
             em.createQuery("DELETE FROM PromotionDetail pd WHERE pd.productID.id = :id").setParameter("id", id).executeUpdate();
             em.createQuery("DELETE FROM ProductImage pi WHERE pi.productID.id = :id").setParameter("id", id).executeUpdate();
 
-            // 2. Lấy danh sách VariantID của sản phẩm này để xóa các ràng buộc khóa ngoại con
             List<Integer> variantIds = em.createQuery("SELECT pv.id FROM ProductVariant pv WHERE pv.productID.id = :id", Integer.class)
                     .setParameter("id", id)
                     .getResultList();
@@ -66,7 +65,6 @@ public class ProductDAOImpl implements ProductDAO {
                 em.createQuery("DELETE FROM ProductVariant pv WHERE pv.productID.id = :id").setParameter("id", id).executeUpdate();
             }
 
-            // 3. Xóa vĩnh viễn sản phẩm khỏi bảng Products
             Product product = em.find(Product.class, id);
             if (product != null) {
                 em.remove(product);
@@ -162,7 +160,6 @@ public class ProductDAOImpl implements ProductDAO {
         }
     }
 
-    // Bài 1: Tìm kiếm kết hợp phân trang thức uống / sản phẩm (mỗi trang 10 sản phẩm)
     @Override
     public List<Product> searchProducts(String keyword, Integer categoryId, Boolean status, int page, int pageSize) {
         EntityManager em = JpaUtil.getEntityManager();
@@ -224,6 +221,57 @@ public class ProductDAOImpl implements ProductDAO {
                 query.setParameter("status", status);
             }
             return query.getSingleResult();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public List<Product> searchActiveProducts(String keyword, Integer categoryId,
+                                              BigDecimal minPrice, BigDecimal maxPrice, String sort) {
+        EntityManager em = JpaUtil.getEntityManager();
+        try {
+            // Giá thực tế: ưu tiên giá khuyến mãi nếu có
+            String effPrice = "COALESCE(NULLIF(p.discountPrice, 0), p.price)";
+
+            StringBuilder jpql = new StringBuilder(
+                    "SELECT p FROM Product p JOIN FETCH p.categoryID c JOIN FETCH p.brandID b WHERE p.status = true");
+
+            boolean hasKw = keyword != null && !keyword.isBlank();
+            if (hasKw) {
+                jpql.append(" AND (LOWER(p.productName) LIKE :kw OR LOWER(b.brandName) LIKE :kw OR LOWER(c.categoryName) LIKE :kw)");
+            }
+            if (categoryId != null && categoryId > 0) {
+                jpql.append(" AND c.id = :catId");
+            }
+            if (minPrice != null) {
+                jpql.append(" AND ").append(effPrice).append(" >= :minPrice");
+            }
+            if (maxPrice != null) {
+                jpql.append(" AND ").append(effPrice).append(" <= :maxPrice");
+            }
+
+            if ("price_asc".equals(sort)) {
+                jpql.append(" ORDER BY ").append(effPrice).append(" ASC, p.id DESC");
+            } else if ("price_desc".equals(sort)) {
+                jpql.append(" ORDER BY ").append(effPrice).append(" DESC, p.id DESC");
+            } else if ("bestseller".equals(sort)) {
+                jpql.append(" ORDER BY p.soldQuantity DESC, p.id DESC");
+            } else {
+                jpql.append(" ORDER BY p.id DESC"); // mới nhất
+            }
+
+            var query = em.createQuery(jpql.toString(), Product.class);
+            if (hasKw) {
+                query.setParameter("kw", "%" + keyword.trim().toLowerCase() + "%");
+            }
+            if (categoryId != null && categoryId > 0) {
+                query.setParameter("catId", categoryId);
+            }
+            if (minPrice != null) query.setParameter("minPrice", minPrice);
+            if (maxPrice != null) query.setParameter("maxPrice", maxPrice);
+
+            return query.getResultList();
         } finally {
             em.close();
         }
