@@ -8,13 +8,13 @@ import java.nio.charset.StandardCharsets;
 
 public class PayOSService {
 
-    public static final String CLIENT_ID = "1848cc5c-3978-4d06-ac21-2f09511b7b4e";
-    public static final String API_KEY = "7420db4b-938a-4990-9aa5-ca010077e0d3";
-    public static final String CHECKSUM_KEY = "191e9edb4ee2ba93ecd140391dc1eeb6e315813bb7125f333f678a5eedfb16ed";
+    public static final String CLIENT_ID = "46f26307-6c63-4d8c-b1d3-d3426a5eca14";
+    public static final String API_KEY = "2030bc2b-fec1-4500-a902-87cfae8e2fbe";
+    public static final String CHECKSUM_KEY = "23e4ce966e400ccffffa570a9ea7784effec01006bb196622058e8a29b1e9de0";
 
-    public static final String BANK_NUMBER = "0346835547";
-    public static final String BANK_NAME = "HUYNH NGOC ANH HUY";
-    public static final String BANK_BIN = "970422"; // MB Bank
+    public static final String BANK_NUMBER = "31780007119999";
+    public static final String BANK_NAME = "NGUYEN LE MINH NHUT";
+    public static final String BANK_BIN = "970422";
 
     private static PayOS payOS;
 
